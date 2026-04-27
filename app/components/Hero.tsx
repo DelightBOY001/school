@@ -11,6 +11,15 @@ export default function Hero() {
   const [videoError, setVideoError] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
+  // Debug: Log config changes
+  useEffect(() => {
+    console.log("🎬 Hero Config Updated:", {
+      title: config.heroTitle,
+      subtitle: config.heroSubtitle,
+      videoUrl: config.heroVideoUrl
+    });
+  }, [config]);
+
   // Reload video when URL changes
   useEffect(() => {
     if (videoRef.current && config.heroVideoUrl) {

@@ -15,7 +15,11 @@ export async function getSiteConfig() {
       .eq("id", "main")
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase error getting site config:", error);
+      throw error;
+    }
+    console.log("✅ Site config loaded:", data);
     return data;
   } catch (error) {
     console.error("Error getting site config:", error);
@@ -25,11 +29,16 @@ export async function getSiteConfig() {
 
 export async function updateSiteConfig(config: any) {
   try {
+    console.log("📝 Saving to Supabase:", config);
     const { error } = await supabase
       .from("site_config")
       .upsert({ id: "main", ...config, updated_at: new Date().toISOString() });
     
-    if (error) throw error;
+    if (error) {
+      console.error("❌ Supabase save error:", error);
+      throw error;
+    }
+    console.log("✅ Site config saved successfully!");
     return true;
   } catch (error) {
     console.error("Error updating site config:", error);
