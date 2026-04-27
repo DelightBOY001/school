@@ -388,6 +388,7 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
     const updated = { ...config, ...newConfig };
     setConfig(updated);
     await updateSiteConfig(newConfig);
+    await refreshData(); // Reload from Supabase to confirm
   };
 
   const addTeacher = async (teacher: Omit<Teacher, "id">) => {
