@@ -1,6 +1,34 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  getSiteConfig,
+  updateSiteConfig,
+  getTeachers,
+  addTeacher as addTeacherFB,
+  updateTeacher as updateTeacherFB,
+  deleteTeacher as deleteTeacherFB,
+  getPrincipal,
+  updatePrincipal as updatePrincipalFB,
+  getPhotos,
+  addPhoto as addPhotoFB,
+  deletePhoto as deletePhotoFB,
+  getNews,
+  addNews as addNewsFB,
+  updateNews as updateNewsFB,
+  deleteNews as deleteNewsFB,
+  getTestimonials,
+  addTestimonial as addTestimonialFB,
+  deleteTestimonial as deleteTestimonialFB,
+  getInquiries,
+  addInquiry as addInquiryFB,
+  updateInquiryStatus as updateInquiryStatusFB,
+  deleteInquiry as deleteInquiryFB,
+  getAdmissionInquiries,
+  addAdmissionInquiry as addAdmissionInquiryFB,
+  updateAdmissionInquiryStatus as updateAdmissionInquiryStatusFB,
+  deleteAdmissionInquiry as deleteAdmissionInquiryFB
+} from "../lib/supabase";
 
 export interface Teacher {
   id: string;
@@ -269,22 +297,48 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
     }
   ];
 
-  // Load data from localStorage (works without Supabase)
+  // Load data from Supabase
   const refreshData = async () => {
     setLoading(true);
     try {
-      console.log("🔄 Loading data from localStorage...");
+      console.log("🔄 Loading data from Supabase...");
 
-      // Try to load from localStorage first
-      const savedConfig = localStorage.getItem('siteConfig');
-      if (savedConfig) {
-        setConfig(JSON.parse(savedConfig));
-        console.log("✅ Data loaded from localStorage");
-      } else {
-        // Use default config if nothing saved
-        setConfig(defaultConfig);
-        console.log("✅ Using default data");
-      }
+      // Get site config
+      const siteConfig = await getSiteConfig();
+      
+      // Get all collections in parallel
+      const [teachers, principal, photos, news, testimonials, inquiries, admissionInquiries] = await Promise.all([
+        getTeachers().catch(() => []),
+        getPrincipal().catch(() => null),
+        getPhotos().catch(() => []),
+        getNews().catch(() => []),
+        getTestimonials().catch(() => []),
+        getInquiries().catch(() => []),
+        getAdmissionInquiries().catch(() => [])
+      ]);
+
+      setConfig(prev => ({
+        ...prev,
+        ...(siteConfig || {}),
+        teachers: teachers.length > 0 ? teachers as Teacher[] : sampleTeachers.map((t, i) => ({ ...t, id: `sample-${i}` })),
+        principal: (principal as Principal) || {
+          id: "main",
+          name: "Dr. Sarah Johnson",
+          photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop",
+          message: "Welcome to Excellence Academy!",
+          qualification: "Ph.D. in Education",
+          experience: "25+ years",
+          email: "principal@school.edu",
+          phone: "+1 234-567-890"
+        },
+        photos: photos.length > 0 ? photos as Photo[] : [],
+        news: news.length > 0 ? news as NewsArticle[] : sampleNews.map((n, i) => ({ ...n, id: `sample-${i}`, date: new Date().toISOString().split('T')[0] })),
+        testimonials: testimonials.length > 0 ? testimonials as Testimonial[] : sampleTestimonials.map((t, i) => ({ ...t, id: `sample-${i}` })),
+        inquiries: inquiries as Inquiry[],
+        admissionInquiries: admissionInquiries as AdmissionInquiry[]
+      }));
+
+      console.log("✅ Data loaded from Supabase");
     } catch (error) {
       console.error("❌ Error loading data:", error);
       setConfig(defaultConfig);
@@ -301,117 +355,95 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
   const updateConfig = async (newConfig: Partial<SiteConfig>) => {
     const updated = { ...config, ...newConfig };
     setConfig(updated);
-    // Save to localStorage
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
-    console.log("✅ Config saved to localStorage");
+    await updateSiteConfig(newConfig);
+    await refreshData();
   };
 
   const addTeacher = async (teacher: Omit<Teacher, "id">) => {
-    const newTeacher = { ...teacher, id: `teacher-${Date.now()}` };
-    const updated = { ...config, teachers: [...config.teachers, newTeacher] };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    const result = await addTeacherFB(teacher);
+    if (result) {
+      await refreshData();
+    }
   };
 
   const updateTeacher = async (id: string, teacher: Partial<Teacher>) => {
-    const updated = { ...config, teachers: config.teachers.map(t => t.id === id ? { ...t, ...teacher } : t) };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await updateTeacherFB(id, teacher);
+    await refreshData();
   };
 
   const deleteTeacher = async (id: string) => {
-    const updated = { ...config, teachers: config.teachers.filter(t => t.id !== id) };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await deleteTeacherFB(id);
+    await refreshData();
   };
 
   const updatePrincipal = async (principal: Principal) => {
-    const updated = { ...config, principal };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await updatePrincipalFB(principal);
+    await refreshData();
   };
 
   const addPhoto = async (photo: Omit<Photo, "id">) => {
-    const newPhoto = { ...photo, id: `photo-${Date.now()}` };
-    const updated = { ...config, photos: [...config.photos, newPhoto] };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await addPhotoFB(photo);
+    await refreshData();
   };
 
   const deletePhoto = async (id: string) => {
-    const updated = { ...config, photos: config.photos.filter(p => p.id !== id) };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await deletePhotoFB(id);
+    await refreshData();
   };
 
   const addInquiry = async (inquiry: Omit<Inquiry, "id" | "date" | "status">) => {
-    const newInquiry = { ...inquiry, id: `inquiry-${Date.now()}`, date: new Date().toISOString().split('T')[0], status: 'new' as const };
-    const updated = { ...config, inquiries: [newInquiry, ...config.inquiries] };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await addInquiryFB(inquiry);
+    await refreshData();
   };
 
   const updateInquiryStatus = async (id: string, status: Inquiry["status"]) => {
-    const updated = { ...config, inquiries: config.inquiries.map(i => i.id === id ? { ...i, status } : i) };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await updateInquiryStatusFB(id, status);
+    await refreshData();
   };
 
   const deleteInquiry = async (id: string) => {
-    const updated = { ...config, inquiries: config.inquiries.filter(i => i.id !== id) };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await deleteInquiryFB(id);
+    await refreshData();
   };
 
   const addAdmissionInquiry = async (inquiry: Omit<AdmissionInquiry, "id" | "date" | "status">) => {
-    const newInquiry = { ...inquiry, id: `admission-${Date.now()}`, date: new Date().toISOString().split('T')[0], status: 'new' as const };
-    const updated = { ...config, admissionInquiries: [newInquiry, ...config.admissionInquiries] };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await addAdmissionInquiryFB(inquiry);
+    await refreshData();
   };
 
   const updateAdmissionInquiryStatus = async (id: string, status: AdmissionInquiry["status"]) => {
-    const updated = { ...config, admissionInquiries: config.admissionInquiries.map(i => i.id === id ? { ...i, status } : i) };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await updateAdmissionInquiryStatusFB(id, status);
+    await refreshData();
   };
 
   const deleteAdmissionInquiry = async (id: string) => {
-    const updated = { ...config, admissionInquiries: config.admissionInquiries.filter(i => i.id !== id) };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await deleteAdmissionInquiryFB(id);
+    await refreshData();
   };
 
   const addNews = async (news: Omit<NewsArticle, "id" | "date">) => {
-    const newNews = { ...news, id: `news-${Date.now()}`, date: new Date().toISOString().split('T')[0] };
-    const updated = { ...config, news: [newNews, ...config.news] };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await addNewsFB(news);
+    await refreshData();
   };
 
   const updateNews = async (id: string, news: Partial<NewsArticle>) => {
-    const updated = { ...config, news: config.news.map(n => n.id === id ? { ...n, ...news } : n) };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await updateNewsFB(id, news);
+    await refreshData();
   };
 
   const deleteNews = async (id: string) => {
-    const updated = { ...config, news: config.news.filter(n => n.id !== id) };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await deleteNewsFB(id);
+    await refreshData();
   };
 
   const addTestimonial = async (testimonial: Omit<Testimonial, "id">) => {
-    const newTestimonial = { ...testimonial, id: `testimonial-${Date.now()}` };
-    const updated = { ...config, testimonials: [newTestimonial, ...config.testimonials] };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await addTestimonialFB(testimonial);
+    await refreshData();
   };
 
   const deleteTestimonial = async (id: string) => {
-    const updated = { ...config, testimonials: config.testimonials.filter(t => t.id !== id) };
-    setConfig(updated);
-    localStorage.setItem('siteConfig', JSON.stringify(updated));
+    await deleteTestimonialFB(id);
+    await refreshData();
   };
 
   return (
