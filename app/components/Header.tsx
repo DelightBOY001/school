@@ -4,15 +4,17 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Phone, Mail, ChevronDown, GraduationCap } from "lucide-react";
 import { useSiteConfig } from "../context/SiteConfigContext";
+import Link from "next/link";
 
 const navLinks = [
-  { name: "Home", href: "#home" },
-  { name: "About", href: "#about" },
+  { name: "Home", href: "/" },
+  { name: "About", href: "/about" },
+  { name: "Teachers", href: "/teachers" },
   { name: "Programs", href: "#programs" },
   { name: "Facilities", href: "#facilities" },
-  { name: "Admissions", href: "#admissions" },
-  { name: "News", href: "#news" },
-  { name: "Contact", href: "#contact" },
+  { name: "Admissions", href: "/admissions" },
+  { name: "News", href: "/news" },
+  { name: "Contact", href: "/contact" },
 ];
 
 export default function Header() {
@@ -71,7 +73,7 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <a href="#home" className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3">
               <div className={`p-2 rounded-lg ${isScrolled ? "bg-school-blue" : "bg-white/20"}`}>
                 <GraduationCap size={32} className={isScrolled ? "text-white" : "text-white"} />
               </div>
@@ -79,12 +81,12 @@ export default function Header() {
                 <h1 className="text-xl font-bold leading-tight">{config.schoolName.split(" ")[0]}</h1>
                 <p className="text-xs tracking-wider">{config.schoolName.split(" ").slice(1).join(" ").toUpperCase() || "ACADEMY"}</p>
               </div>
-            </a>
+            </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-1">
               {navLinks.map((link) => (
-                <a
+                <Link
                   key={link.name}
                   href={link.href}
                   className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
@@ -94,14 +96,14 @@ export default function Header() {
                   }`}
                 >
                   {link.name}
-                </a>
+                </Link>
               ))}
             </nav>
 
             {/* CTA Button */}
             <div className="hidden lg:block">
-              <a
-                href="#admissions"
+              <Link
+                href="/admissions"
                 className={`px-6 py-2.5 rounded-lg font-semibold transition-all duration-300 ${
                   isScrolled
                     ? "bg-school-blue text-white hover:bg-blue-800"
@@ -109,7 +111,7 @@ export default function Header() {
                 }`}
               >
                 Apply Now
-              </a>
+              </Link>
             </div>
 
             {/* Mobile Menu Button */}
@@ -137,25 +139,22 @@ export default function Header() {
           >
             <nav className="flex flex-col gap-4">
               {navLinks.map((link, index) => (
-                <motion.a
+                <Link
                   key={link.name}
                   href={link.href}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="text-xl font-medium text-gray-800 py-3 border-b border-gray-100 hover:text-school-blue transition-colors"
                 >
                   {link.name}
-                </motion.a>
+                </Link>
               ))}
-              <a
-                href="#admissions"
+              <Link
+                href="/admissions"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="mt-4 btn-primary text-center"
               >
                 Apply Now
-              </a>
+              </Link>
             </nav>
           </motion.div>
         )}
