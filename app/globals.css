@@ -50,9 +50,9 @@ a {
 .video-overlay {
   background: linear-gradient(
     135deg,
-    rgba(30, 58, 138, 0.85) 0%,
-    rgba(15, 23, 42, 0.75) 50%,
-    rgba(30, 58, 138, 0.85) 100%
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(30, 58, 138, 0.9) 50%,
+    rgba(15, 23, 42, 0.95) 100%
   );
 }
 
